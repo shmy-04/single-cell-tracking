@@ -19,6 +19,7 @@ The image analysis workflow consists of the following steps:
 1. Train a custom StarDist model for the target cells (recommended).
 2. Add the trained model to the `models` folder and adjust the segmentation thresholds in `thresholds.json` if necessary.
 3. Run cell segmentation using the Python segmentation code.
+4. Run the Fiji macro `watershed_cell_separation.ijm` to separate touching cells using [Adjustable Watershed](https://imagej.net/plugins/adjustable-watershed/adjustable-watershed).
 
 ### 3. Cell Tracking
 
