@@ -13,6 +13,7 @@ The image analysis workflow consists of the following steps:
    - [StackReg](https://bigwww.epfl.ch/thevenaz/stackreg/) ([Thevenaz et al., 1998](https://doi.org/10.1109/83.650848))
    - [BigWarp](https://imagej.net/plugins/bigwarp) ([Bogovic et al., 2016](https://doi.org/10.1109/isbi.2016.7493463)), if needed.
 3. Crop images to the regions of interest for subsequent analysis.
+4. Split the processed image stack into individual TIFF images using the Fiji macro `split_image_stack.ijm`.
 
 ### 2. Cell Segmentation
 
