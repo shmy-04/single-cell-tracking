@@ -11,7 +11,7 @@ The image analysis workflow consists of the following steps:
 1. Remove background noise and enhance image contrast using a Fiji macro.
 2. Correct image drift using:
    - [StackReg](https://bigwww.epfl.ch/thevenaz/stackreg/) ([Thevenaz et al., 1998](https://doi.org/10.1109/83.650848))
-   - BigWarp (if necessary)
+   - [BigWarp](https://imagej.net/plugins/bigwarp) ([Bogovic et al., 2016](https://doi.org/10.1109/isbi.2016.7493463)), if needed.
 3. Crop images to the regions of interest for subsequent analysis.
 
 ### 2. Cell Segmentation
