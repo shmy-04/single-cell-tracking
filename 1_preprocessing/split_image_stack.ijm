@@ -1,13 +1,14 @@
-// Get the current working directory
-baseDir = getDirectory("current");
-
 // Open the processed image stack
 showMessage("Select the processed image stack");
 inputPath = File.openDialog("Select the processed image stack");
 open(inputPath);
 
+// Select the segmentation directory
+showMessage("Select the 3_segmentation directory");
+baseDir = getDirectory("Select the segmentation directory");
+
 // Define the output directory
-saveDir = File.getParent(baseDir) + "/3_segmentation/1_images/";
+saveDir = baseDir + "/1_images/";
 File.makeDirectory(saveDir);
 
 // Get the number of slices in the stack
