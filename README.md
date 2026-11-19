@@ -25,7 +25,7 @@ The image analysis workflow consists of the following steps:
 ### 3. Cell Tracking
 
 1. Perform preliminary automated single-cell tracking using the Python tracking code `preliminary_cell_tracking.ipynb`.
-2. Convert the grayscale images in the `prediction` folder into an image stack using Fiji.
+2. Convert the grayscale images in the `prediction` folder into an image stack, then convert the stack to 8-bit using Fiji.
 3. Construct cell lineages using TrackMate in Fiji with the following settings:
     - **Detector:** Label Image Detector
     - **Initial thresholding:** Select all cells
@@ -39,6 +39,7 @@ The image analysis workflow consists of the following steps:
     **Note:** The tracking parameters listed above were optimized for our image dataset and may require adjustment for other datasets. In particular, assigning a high weight to Mean intensity Ch1 is important for accurate cell tracking in this workflow.
     
 4. Manually inspect and correct tracking trajectories, including cell division events and reconnection of temporarily lost cells.
+5. When performing TrackMate analysis in multiple rounds, exclude previously analyzed cells from subsequent rounds by subtracting a binary mask of the first frame of the previously analyzed label image (`LblImg`) from the first frame of the image stack using a Fiji macro `exclude_analyzed_cells.ijm`.
 
 ### 4. Data Analysis
 
