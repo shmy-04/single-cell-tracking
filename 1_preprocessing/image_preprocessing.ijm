@@ -1,4 +1,7 @@
-// Open the stack image to be processed before running this macro
+// Open the processed image stack
+showMessage("Select the raw image stack");
+inputPath = File.openDialog("Select the processed image stack");
+open(inputPath);
 
 // Select the output directory.
 showMessage("Select Save Folder");
