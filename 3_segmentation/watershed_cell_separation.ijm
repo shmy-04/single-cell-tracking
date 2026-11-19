@@ -1,5 +1,6 @@
-// Get the current working directory
-baseDir = getDirectory("current");
+// Select the segmentation directory
+showMessage("Select the 3_segmentation directory");
+baseDir = getDirectory("Select the segmentation directory");
 
 // Open the stack image
 File.openSequence(baseDir + "3_label_img/");
