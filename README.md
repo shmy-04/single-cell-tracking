@@ -25,11 +25,26 @@ The image analysis workflow consists of the following steps:
 ### 3. Cell Tracking
 
 1. Perform preliminary automated single-cell tracking using the Python tracking code `preliminary_cell_tracking.ipynb`.
-2. Manually inspect and correct tracking trajectories using TrackMate in Fiji.
+2. Convert the grayscale images in the `prediction` folder into an image stack using Fiji.
+3. Construct cell lineages using TrackMate in Fiji with the following settings:
+    - **Detector:** Label Image Detector
+    - **Initial thresholding:** Select all cells
+    - **Spot coloring:** Area (Auto)
+    - **Tracker:** LAP Tracker
+      - Frame-to-frame linking: Max distance = 50 pixels; Mean intensity Ch1 weight = 12.5
+      - Gap closing: Enabled; Max distance = 50 pixels; Max frame gap = 5; Mean intensity Ch1 weight = 12.5
+      - Segment splitting: Enabled; Max distance = 40 pixels; Mean intensity Ch1 weight = 12.5
+    - **Track filtering:** Track start (retain only tracks originating from the initial frame)
+    
+    **Note:** The tracking parameters listed above were optimized for our image dataset and may require adjustment for other datasets. In particular, assigning a high weight to Mean intensity Ch1 is important for accurate cell tracking in this workflow.
+    
+4. Manually inspect and correct tracking trajectories, including cell division events and reconnection of temporarily lost cells.
 
 ### 4. Data Analysis
 
-Perform downstream analysis using the corrected tracking results.
+1. Export spot and edge data from TrackMate.
+2. Construct genealogy_data by connecting individual cell trajectories and organizing parent–daughter relationships using the exported spot and edge data.
+3. Perform downstream analysis using the reconstructed cell lineages.
 
 ## Important Notes
 
