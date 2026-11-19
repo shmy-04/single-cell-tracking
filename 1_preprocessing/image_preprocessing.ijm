@@ -9,6 +9,7 @@ saveDir = getDirectory("Choose a Directory");
 
 // Perform background subtraction and contrast enhancement
 rename("stack");
+setOption("ScaleConversions", true);
 run("8-bit");
 run("Duplicate...", "duplicate");
 run("Gaussian Blur...", "sigma=10 stack");
@@ -18,6 +19,7 @@ close();
 selectImage("stack-1");
 close();
 selectImage("Result of stack");
+setOption("ScaleConversions", true);
 run("8-bit");
 run("Enhance Contrast...", "saturated=0.35 normalize process_all");
 
