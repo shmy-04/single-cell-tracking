@@ -1,6 +1,12 @@
 /example_workflow/
 git rm -r --cached example_workflow/
 
+/2_training/Data/
+git rm -r --cached 2_training/Data/
+
+/2_training/models/
+git rm -r --cached 2_training/models/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
