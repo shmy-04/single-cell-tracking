@@ -17,7 +17,7 @@ The image analysis workflow consists of the following steps:
 
 ### 2. Cell Segmentation
 
-1. Train a custom StarDist model for the target cells (recommended) based on the example code provided by the [StarDist project](https://github.com/stardist/stardist).
+1. Train a custom StarDist model ([Schmidt et al., 2018](https://link.springer.com/chapter/10.1007/978-3-030-00934-2_30)) for the target cells based on the example code provided by the [StarDist project](https://github.com/stardist/stardist).
 2. Add the trained model to the `3_segmentation/models` folder and adjust the segmentation thresholds in `thresholds.json` if necessary. In our analysis, the probability threshold (prob) was typically reduced by approximately 0.3 from the optimized value to improve cell detection.
 3. Run cell segmentation using the Python segmentation code `segmentation_stardist-opp.ipynb`.
 4. Run the Fiji macro `watershed_cell_separation.ijm` to separate touching cells using [Adjustable Watershed](https://imagej.net/plugins/adjustable-watershed/adjustable-watershed). The tolerance parameter is set to 3.0 by default in this macro.
@@ -26,7 +26,7 @@ The image analysis workflow consists of the following steps:
 
 1. Perform preliminary automated single-cell tracking using the Python tracking code `preliminary_cell_tracking.ipynb`.
 2. Convert the grayscale images in the `prediction` folder into an image stack, then convert the stack to 8-bit using Fiji.
-3. Construct cell lineages using TrackMate in Fiji with the following settings:
+3. Construct cell lineages using TrackMate 7 ([Ershov et al., 2022](https://www.nature.com/articles/s41592-022-01507-1)) in Fiji with the following settings:
     - **Detector:** Label Image Detector
     - **Initial thresholding:** Select all cells
     - **Spot coloring:** Area (Auto)
