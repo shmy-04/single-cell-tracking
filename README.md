@@ -50,3 +50,15 @@ The image analysis workflow consists of the following steps:
 ## Important Notes
 
 The preliminary tracking code is not intended to produce fully accurate tracking results on its own. Tracking errors may occur. Therefore, manual inspection and correction using TrackMate in Fiji are required before downstream analysis.
+
+## How to Cite
+
+If you use the code or image analysis workflow provided in this repository, please cite this GitHub repository:
+
+Ikeda S. 2026. *Single-Cell Tracking*. GitHub. (https://github.com/shmy-04/single-cell-tracking)
+
+## Related Publication
+
+The image analysis workflow provided in this repository was developed and used in the following study:
+
+- [Ikeda et al. 2026. *mBio*](https://journals.asm.org/doi/10.1128/mbio.02345-26)
