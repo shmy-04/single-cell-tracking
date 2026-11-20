@@ -51,6 +51,10 @@ The image analysis workflow consists of the following steps:
 
 The preliminary tracking code is not intended to produce fully accurate tracking results on its own. Tracking errors may occur. Therefore, manual inspection and correction using TrackMate in Fiji are required before downstream analysis.
 
+## Licenses
+
+The original code is licensed under the [MIT License](LICENSE). The notebooks `train_stardist.ipynb` and `segmentation_stardist-opp.ipynb` incorporate code adapted from the [StarDist project](https://github.com/stardist/stardist), which is licensed under the [BSD-3-Clause License](https://github.com/stardist/stardist/blob/main/LICENSE.txt). A copy of the StarDist license is provided in the `LICENSES` directory.
+
 ## How to Cite
 
 If you use the code or image analysis workflow provided in this repository, please cite this GitHub repository:
