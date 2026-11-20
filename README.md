@@ -17,16 +17,16 @@ The image analysis workflow consists of the following steps:
 
 ### 2. Cell Segmentation
 
-1. Train a custom StarDist model ([Schmidt et al., 2018](https://link.springer.com/chapter/10.1007/978-3-030-00934-2_30)) for the target cells based on the example code provided by the [StarDist project](https://github.com/stardist/stardist).
+1. Train a custom StarDist model ([Schmidt et al., 2018](https://doi.org/10.1007/978-3-030-00934-2_30)) for the target cells based on the example code provided by the [StarDist project](https://github.com/stardist/stardist).
 2. Add the trained model to the `3_segmentation/models` folder and adjust the segmentation thresholds in `thresholds.json` if necessary. In our analysis, the probability threshold (prob) was typically reduced by approximately 0.3 from the optimized value to improve cell detection.
-3. Run cell segmentation using the Python segmentation code `segmentation_stardist-opp.ipynb`.
+3. Run cell segmentation using the Python segmentation code `segmentation_stardist-opp.ipynb`, which incorporates code from the [StarDist project](https://github.com/stardist/stardist) and the StarDist-OPP approach ([Jelli et al., 2023](https://doi.org/10.1111/mmi.15064)).
 4. Run the Fiji macro `watershed_cell_separation.ijm` to separate touching cells using [Adjustable Watershed](https://imagej.net/plugins/adjustable-watershed/adjustable-watershed). The tolerance parameter is set to 3.0 by default in this macro.
 
 ### 3. Cell Tracking
 
 1. Perform preliminary automated single-cell tracking using the Python tracking code `preliminary_cell_tracking.ipynb`.
 2. Convert the grayscale images in the `prediction` folder into an image stack, then convert the stack to 8-bit using Fiji.
-3. Construct cell lineages using TrackMate 7 ([Ershov et al., 2022](https://www.nature.com/articles/s41592-022-01507-1)) in Fiji with the following settings:
+3. Construct cell lineages using TrackMate 7 ([Ershov et al., 2022](https://doi.org/10.1038/s41592-022-01507-1)) in Fiji with the following settings:
     - **Detector:** Label Image Detector
     - **Initial thresholding:** Select all cells
     - **Spot coloring:** Area (Auto)
@@ -61,4 +61,4 @@ Ikeda S. 2026. *single-cell-tracking*. GitHub. (https://github.com/shmy-04/singl
 
 The image analysis workflow provided in this repository was developed and used in the following study:
 
-- [Ikeda et al. 2026. *mBio*](https://journals.asm.org/doi/10.1128/mbio.02345-26)
+- [Ikeda et al. 2026. *mBio*](https://doi.org/10.1128/mbio.02345-26)
