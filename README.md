@@ -55,7 +55,7 @@ The preliminary tracking code is not intended to produce fully accurate tracking
 
 If you use the code or image analysis workflow provided in this repository, please cite this GitHub repository:
 
-Ikeda S. 2026. *Single-Cell Tracking*. GitHub. (https://github.com/shmy-04/single-cell-tracking)
+Ikeda S. 2026. *single-cell-tracking*. GitHub. (https://github.com/shmy-04/single-cell-tracking)
 
 ## Related Publication
 
