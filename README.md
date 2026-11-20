@@ -1,6 +1,6 @@
 # Single-Cell Tracking
 
-This repository currently contains Python code for preliminary single-cell tracking of segmented time-lapse microscopy images. The complete image analysis workflow is described below.
+This repository provides an image analysis workflow for single-cell tracking and lineage reconstruction from time-lapse microscopy images. The workflow combines Fiji, Python, TrackMate, and R.
 
 ## Overview
 
