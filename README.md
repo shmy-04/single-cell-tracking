@@ -36,7 +36,7 @@ The image analysis workflow consists of the following steps:
       - Segment splitting: Enabled; Max distance = 40 pixels; Mean intensity Ch1 weight = 12.5
     - **Track filtering:** Track start (retain only tracks originating from the initial frame)
     
-    **Note:** The tracking parameters listed above were optimized for our image dataset and may require adjustment for other datasets. In particular, assigning a high weight to Mean intensity Ch1 is important for accurate cell tracking in this workflow.
+    **Note:** The tracking parameters listed above were optimized for our image dataset and may require adjustment for other datasets. In particular, assigning a high weight to Mean intensity Ch1 is important for accurate cell tracking in this workflow because our Python tracking code assigns different grayscale intensity values to cells based on their track IDs.
     
 4. Manually inspect and correct tracking trajectories, including cell division events and reconnection of temporarily lost cells.
 5. When performing TrackMate analysis in multiple rounds, exclude previously analyzed cells from subsequent rounds by subtracting a binary mask of the first frame of the previously analyzed label image (`LblImg`) from the first frame of the image stack using a Fiji macro `exclude_analyzed_cells.ijm`.
