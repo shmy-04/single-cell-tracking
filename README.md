@@ -40,12 +40,12 @@ The image analysis workflow consists of the following steps:
     
 4. Manually inspect and correct tracking trajectories, including cell division events and reconnection of temporarily lost cells.
 5. When performing TrackMate analysis in multiple rounds, exclude previously analyzed cells from subsequent rounds by subtracting a binary mask of the first frame of the previously analyzed label image (`LblImg`) from the first frame of the image stack using a Fiji macro `exclude_analyzed_cells.ijm`.
+6. Export spots, edges and allspots data from TrackMate as CSV files.
 
-### 4. Data Analysis
+### 4. Genealogy Data Construction
 
-1. Export spot and edge data from TrackMate.
-2. Construct genealogy_data by connecting individual cell trajectories and organizing parent–daughter relationships using the exported spot and edge data.
-3. Perform downstream analysis using the reconstructed cell lineages.
+1. Construct genealogy data by connecting individual cell trajectories and organizing parent–daughter relationships using the R code `TrackMate Cell Genealogy Reconstruction.Rmd`.
+2. Perform downstream analysis using the reconstructed cell lineages.
 
 ## Important Notes
 
