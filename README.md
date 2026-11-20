@@ -40,7 +40,7 @@ The image analysis workflow consists of the following steps:
     
 4. Manually inspect and correct tracking trajectories, including cell division events and reconnection of temporarily lost cells.
 5. When performing TrackMate analysis in multiple rounds, exclude previously analyzed cells from subsequent rounds by subtracting a binary mask of the first frame of the previously analyzed label image (`LblImg`) from the first frame of the image stack using a Fiji macro `exclude_analyzed_cells.ijm`.
-6. Export spots, edges and allspots data from TrackMate as CSV files.
+6. Export spots, edges and allspots data from TrackMate as CSV files into the `csv_results` folder.
 
 ### 4. Genealogy Data Construction
 
