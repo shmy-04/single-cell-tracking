@@ -1,0 +1,360 @@
+---
+title: "TrackMate Cell Genealogy Reconstruction"
+author: "Shuto Ikeda"
+output: .csv
+---
+
+```{r setting}
+# Clear global workspace
+rm( list = ls( envir = globalenv() ), envir = globalenv() )
+
+library("ggthemes")
+library("tidyverse")
+library("patchwork")
+library("export")
+library("e1071")
+library("scales")
+library("RColorBrewer")
+library("zoo")
+library("plotly")
+
+# define createEmptyDf
+createEmptyDf = function( nrow, ncol, colnames = c() ){
+  data.frame( matrix( vector(), nrow, ncol, dimnames = list( c(), colnames ) ) )
+}
+```
+
+```{r setting}
+# TrackMate frame indices start at 0 by default.
+# Example: analysis starting at the fifth image corresponds to frame index 4.
+analysis_start_frame <- 0 
+
+# Convert the acquisition interval (10 minutes) to hours, accounting for analysis of every tenth frame.
+time_interval <- 10/60*10 
+
+# Spatial calibration in micrometers per pixel (camera pixel size: 6.45 µm).
+scale = 0.0645 # 100x objective
+```
+
+```{r get_dir_path}
+# Find all analysis_round_* directories
+round_dirs <- list.dirs(path = "../4_tracking/4.2_Trackmate", recursive = FALSE)
+round_dirs <- round_dirs[grepl("^analysis_round_[0-9]+$", basename(round_dirs))]
+
+# Find Spot and Edge CSV files in each csv_results directory
+spot_file_list <- unlist(lapply(round_dirs, function(dir) {
+  list.files(path = file.path(dir, "csv_results"),
+             pattern = "(^|_)spots\\.csv$",
+             full.names = TRUE,
+             ignore.case = TRUE
+             )
+  }))
+
+edge_file_list <- unlist(lapply(round_dirs, function(dir) {
+  list.files(
+    path = file.path(dir, "csv_results"),
+    pattern = "(^|_)edges\\.csv$",
+    full.names = TRUE,
+    ignore.case = TRUE
+  )
+}))
+```
+
+```{r import}
+# Read TrackMate CSV files, keeping the second line as the header
+read_trackmate_csv <- function(file) {
+  lines <- readLines(file, warn = FALSE)
+  lines <- lines[-c(1, 3, 4)]
+  read.csv(text = paste(lines, collapse = "\n"), header = TRUE)
+}
+
+# Read each CSV file and combine the results.
+max_spot_id <- 0
+raw_spot_data <- 
+  lapply(spot_file_list, function(file) {
+    df <- read_trackmate_csv(file)
+    df$Signal.Noise.ratio.ch1 <- as.character(df$Signal.Noise.ratio.ch1)
+    df$Spot.ID <- df$Spot.ID + max_spot_id
+    print(max_spot_id)
+    max_spot_id <<- max(df$Spot.ID, na.rm = T) # Update the variable in the parent environment by <<-
+    return(df)
+  }) %>%
+  bind_rows()
+
+# Read each CSV file and combine the results.
+max_spot_id <- 0
+raw_edge_data <- 
+  lapply(edge_file_list, function(file) {
+    df <- read_trackmate_csv(file)
+    df$Source.spot.ID <- df$Source.spot.ID + max_spot_id
+    df$Target.spot.ID <- df$Target.spot.ID + max_spot_id
+    print(max_spot_id)
+    max_spot_id <<- max(df$Target.spot.ID, na.rm = T) # Update the variable in the parent environment by <<-
+    return(df)
+  }) %>%
+  bind_rows()
+
+# Check for duplicate Spot IDs.
+duplicated_spots <- raw_spot_data[duplicated(raw_spot_data$Spot.ID), ]
+
+if (nrow(duplicated_spots) > 0) {
+  message("Duplicate Spot IDs found:")
+  print(duplicated_spots)
+} else {
+  message("No duplicate Spot IDs found.")
+}
+```
+
+```{r export_merged_data}
+# Exports data by merging several files with distinct spot IDs.
+
+# Find Spot and Edge CSV files in each csv_results directory
+all_spots_file_list <- unlist(lapply(round_dirs, function(dir) {
+  list.files(path = file.path(dir, "csv_results"),
+             pattern = "(^|_)allspots\\.csv$",
+             full.names = TRUE,
+             ignore.case = TRUE
+             )
+  }))
+
+# CSVファイルを読み込み、リストに格納
+max_spot_id <- 0
+raw_all_spots_data <- 
+  lapply(all_spots_file_list, function(file) {
+    df <- read_trackmate_csv(file)
+    df$Signal.Noise.ratio.ch1 <- as.character(df$Signal.Noise.ratio.ch1)
+    df$Spot.ID <- df$Spot.ID + max_spot_id
+    print(max_spot_id)
+    max_spot_id <<- max(df$Spot.ID, na.rm = T) # Update the variable in the parent environment by <<-
+    return(df)
+  }) %>%
+  bind_rows()
+
+# Check for duplicate Spot IDs.
+duplicated_spots <- raw_all_spots_data[duplicated(raw_all_spots_data$Spot.ID), ]
+
+if (nrow(duplicated_spots) > 0) {
+  message("Duplicate Spot IDs found:")
+  print(duplicated_spots)
+} else {
+  message("No duplicate Spot IDs found.")
+  
+  # Export the data.
+  dir.create("./output", showWarnings = FALSE)
+  
+  write.table(raw_all_spots_data,
+              file = "./output/allspots_merged.csv",
+              quote = FALSE,
+              sep = ",",
+              row.names = F)
+    
+    message("Exported allspots_merged.")
+}
+```
+
+```{r modify}
+spot_data <-
+  raw_spot_data %>% 
+  dplyr::mutate(Frame = Frame + analysis_start_frame) %>% 
+  dplyr::mutate(Area = Area*scale**2) # Convert area from pixels^2 to µm^2.
+
+edge_data <- 
+  raw_edge_data
+```
+
+```{r find_terminal_spots}
+# Collect Spot IDs from the first frame.
+# The current analysis includes as many cells from the first frame as possible.
+a <- spot_data %>%
+  filter(Frame == min(Frame)) %>% 
+  select("Spot.ID")
+
+First.Frame.Spot.ID <- as.list(a$Spot.ID)
+
+# Define the first forward-traversal function.
+my.func_1 <- function(x, y, pending) {
+  SaveList <- append(y, x)
+  pending <- pending
+  
+  if(!is.na(match(x, edge_data$Source.spot.ID))) {
+    T_ID <- edge_data %>% 
+      filter(Source.spot.ID == x) %>% 
+      pull("Target.spot.ID") %>% 
+      as.integer() # Convert to integer IDs.
+  } else {
+    return(list(SaveList = SaveList, pending = pending))
+  }
+  
+  if(length(T_ID) > 1) {
+    # If there are two daughter Spot IDs:
+    # Follow one branch and add the other to the pending list.
+    pending <- append(pending, T_ID[2])
+    T_ID <- T_ID[1]
+  }
+  
+  my.func_2(T_ID, SaveList, pending)
+}
+
+# Define the second forward-traversal function.
+my.func_2 <- function(x, y, pending) {
+  SaveList <- append(y, x)
+  pending <- pending
+  
+  if(!is.na(match(x, edge_data$Source.spot.ID))) {
+    T_ID <- edge_data %>% 
+      filter(Source.spot.ID == x) %>% 
+      pull("Target.spot.ID") %>% 
+      as.integer() # Convert to integer IDs.
+  } else {
+    # If no next Spot is found, the current Spot is not connected to any subsequent Spot.
+    # Since tracking in TrackMate was performed until the second cell division, terminate the analysis of this lineage when no next Spot is found.
+    return(list(SaveList = SaveList, pending = pending))
+  }
+  
+  if(length(T_ID) > 1) {
+    # If there are two daughter Spot IDs:
+    # Follow one branch and add the other to the pending list.
+    pending <- append(pending, T_ID[2])
+    T_ID <- T_ID[1]
+  }
+  
+  my.func_1(T_ID, SaveList, pending)
+}
+
+# Start the traversal.
+pending <- list() # List of branches awaiting processing.
+result_list <- list() # List for storing traversal results.
+
+# Process the initial Spot IDs.
+result_list <- lapply(First.Frame.Spot.ID, function(id) {
+  res <- my.func_1(id, list(), pending)
+  pending <<- res$pending
+  return(res$SaveList)
+  }
+)
+print(paste("Initial pending length:", length(pending)))
+
+# Process all pending branches.
+while (length(pending) > 0) {
+  next_pending <- pending
+  pending <- list()
+  result_list <- c(result_list, lapply(next_pending, function(id) {
+    res <- my.func_1(id, list(), pending)
+    pending <<- res$pending
+    return(res$SaveList)
+  }))
+  print(paste("Pending length after loop:", length(pending)))
+}
+
+# Collect the terminal Spot ID from each tracked branch.
+Last.Frame.Spot.ID <- lapply(result_list, function(lst) {
+  return(tail(lst, n = 1)[[1]]) # Get the last element of each list.
+})
+```
+
+```{r reconstruct_lineages}
+# Daughter cells share their ancestral trajectory, so reconstruct each lineage backward from its terminal Spot.
+# Starting the lineage reconstruction from the initial Spot would be more complicated.
+
+# Pass a terminal Spot ID as x and an empty output list as y.
+my.func_3 <- function(x, y) {
+  SaveList <- append(y, x)
+  
+  while (!is.na(match(x, edge_data$Target.spot.ID))) { 
+    ID <- edge_data %>%
+      filter(Target.spot.ID == x) %>%
+      pull("Source.spot.ID") %>%
+      as.integer() # Convert to integer IDs.
+    
+    if(length(ID) == 1){
+      SaveList <- append(SaveList, ID)
+    } else {
+      print(paste("source.ID", ID, sep = ":"))
+      print(paste("target.ID", x, sep = ":"))
+      mistake_edge <- edge_data[edge_data$Target.spot.ID == x,]
+      print(mistake_edge)
+      mistake_spot <- spot_data[spot_data$Spot.ID == ID[1] | spot_data$Spot.ID == ID[2] | spot_data$Spot.ID == x,]
+      print(mistake_spot)
+      ID <- ID[1]
+      SaveList <- append(SaveList, ID)
+    }
+    
+    x <- ID
+  }
+  
+  return(SaveList)
+}
+
+list <- list() # Initialize an empty list.
+Spot.genealogy <- lapply(Last.Frame.Spot.ID, my.func_3, list) # Store the Spot-ID sequence for each lineage. 
+
+# Note: Spot IDs are initially ordered backward, from terminal to ancestral Spots.
+```
+
+```{r calculate_generations}
+my.func_4 <- # Extract the area and division status for each Spot ID.
+  function(x){  # x contains a list of Spot IDs.
+    data <- # Retrieve the data for the specified Spot ID.
+      spot_data %>% 
+      dplyr::filter(Spot.ID == x) %>% 
+      dplyr::select("Spot.ID", "Frame", "Area", "Quality")
+    
+    IF_Source <- # Find the row where the current Spot ID is the Target Spot ID, and retrieve the corresponding Source Spot ID.
+      edge_data %>% 
+      dplyr::filter(Target.spot.ID == x) %>% 
+      dplyr::select("Source.spot.ID")
+    if(is.na(as.integer(IF_Source)) == TRUE){ # If there is no Source Spot ID, this is an initial Spot.
+      IF_Source[1, 1] <- NA
+    }
+    
+    IF_Divided <- # Find all rows with the specified Source Spot ID.
+      edge_data %>% 
+      dplyr::filter(Source.spot.ID == as.character(IF_Source))
+    
+    # If one Target Spot is found, the cell has not divided. If two Target Spots are found, the cell has divided.
+    Divide_data.frame <-
+      createEmptyDf(0, 1, colnames = c("IF_Divided"))
+    if(nrow(IF_Divided) == 1){
+      Divide_data.frame[1, 1] <- "N"
+    }else if(nrow(IF_Divided) == 2){
+      Divide_data.frame[1, 1] <- "Y"
+    }else if(nrow(IF_Divided) == 0) { # If IF_Divided is 0, the initial Spot has been reached.
+      Divide_data.frame[1, 1] <- "N"
+    }
+    
+    data <- dplyr::bind_cols(data, IF_Source, Divide_data.frame)
+    
+    return(data)
+  }
+
+my.func_5 <- # Build a lineage data frame from the extracted Spot measurements.
+  function(x){ # x contains a list of Spot IDs.
+    A_data.frame <-
+      lapply(x, my.func_4) %>% 
+      dplyr::bind_rows() %>% 
+      arrange(Frame) %>% 
+      mutate(Time = Frame * time_interval,
+             generation_count = cumsum(IF_Divided == "Y"))
+  }
+
+genealogy_data <-
+  lapply(Spot.genealogy, my.func_5) 
+```
+
+```{r export_setting}
+# Assign a track number to each lineage and combine the data frames.
+All_genealogy_data <- 
+  lapply(seq_along(genealogy_data), function(i) {
+    genealogy_data[[i]] %>%
+      mutate(track = i)  # Add a track number to each lineage.
+  }) %>%
+  bind_rows() %>% # Combine all lineage data frames. 
+  mutate(Area = ifelse(Quality == -1, NA, Area)) # Set area to NA for manually added Spots identified by Quality == -1.
+
+# Export the data.
+write.table(All_genealogy_data,
+            file = "./output/All_genealogy_data.csv",
+            quote = FALSE,
+            sep = ",",
+            row.names = F)
+```
